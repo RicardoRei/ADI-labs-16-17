@@ -33,7 +33,7 @@ s0 = np.array([1, 0, 0, 0, 0, 0, 0, 0]) #initial state
 
 P3 = ln.matrix_power(P, 3)
 
-res = np.dot(P3, s0)
+res = np.dot(s0, P3)
 
 print(res)
 
