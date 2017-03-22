@@ -1,27 +1,39 @@
 import numpy as np
 
-def createTransictionsMatrix():
+def normalizeMatrix(matrix):
+	sum = 0
+	for i in range(0, len(matrix)):
+		for j in range(0, len(matrix[i])):
+			sum += matrix[i][j]
+
+		for j in range(0, len(matrix[i])):
+			if matrix[i][j] > 0.0:
+				matrix[i][j] = matrix[i][j]/sum
+		sum = 0
+	return matrix
+
+def createTransitionsMatrix():
 	P = np.zeros((16,16))
 
 	for i in range(0, 16):
-		linha_lobo = X[i][0]
-		linha_coelho = X[i][1]
+		partida_lobo = X[i][0]
+		partida_coelho = X[i][1]
 		for j in range(0, 16):
 
-			coluna_coelho = X[j][1]
-			coluna_lobo = X[j][0]
+			destino_coelho = X[j][1]
+			destino_lobo = X[j][0]
 
-			if abs((coluna_lobo - linha_lobo)) == 0 : #diferenca de 0 implica stay
-				P[i][j] = P_lobo_s[linha_lobo][coluna_lobo] * P_coelho[linha_coelho][coluna_coelho]
+			if abs((destino_lobo - partida_lobo)) == 0 : #diferenca de 0 implica stay
+				P[i][j] = P_lobo_s[partida_lobo][destino_lobo] * P_coelho[partida_coelho][destino_coelho]
 
-			elif abs((coluna_lobo - linha_lobo)) == 1: #diferenca de 1 implica deslocamento lateral
-				P[i][j] = P_lobo_rl[linha_lobo][coluna_lobo] * P_coelho[linha_coelho][coluna_coelho]
+			elif abs((destino_lobo - partida_lobo)) == 1: #diferenca de 1 implica deslocamento lateral
+				P[i][j] = P_lobo_rl[partida_lobo][destino_lobo] * P_coelho[partida_coelho][destino_coelho]
 
-			elif abs((coluna_lobo - linha_lobo)) == 2: #diferenca de 2 implica deslocamento vertical
-				P[i][j] = P_lobo_ud[linha_lobo][coluna_lobo] * P_coelho[linha_coelho][coluna_coelho]
+			elif abs((destino_lobo - partida_lobo)) == 2: #diferenca de 2 implica deslocamento vertical
+				P[i][j] = P_lobo_ud[partida_lobo][destino_lobo] * P_coelho[partida_coelho][destino_coelho]
 
-			print("| %d%d-%d%d: %.3f " % (linha_lobo, linha_coelho, coluna_lobo, coluna_coelho, P[i][j]), end='')
-		print('')
+			#print("| %d%d-%d%d: %.3f " % (partida_lobo, partida_coelho, destino_lobo, destino_coelho, P[i][j]), end='')
+		#print('')
 	return P
 
 X = np.array([[0, 0], [0, 1], [0, 2], [0, 3],
@@ -51,27 +63,35 @@ P_lobo_s = np.array([[1.0, 0.0, 0.0, 0.0],
 		    		 [0.0, 0.0, 1.0, 0.0], 
 		    	  	 [0.0, 0.0, 0.0, 1.0]])
 
-P = createTransictionsMatrix()
+P = createTransitionsMatrix()
 
-Policy = np.array([0.0, 0.0, 0.0, 1.0, 0.0])
+Policy = np.array([0.0, 0.0, 1.0, 0.0, 0.0])
+
+P_normalized = normalizeMatrix(P)
+
 #--------------------- possivel tabela de custos --------------------------------
 
-C = [[0.0,  0.0,  0.0,   0.0,  1.0], #(0,0)
-	 [0.5,  0.5,  0.0,   0.0,  0.0], #(0,1)
-	 [0,    0,    0.5,   0.5,  0.0], #(0,2)
-	 [0.25, 0.25, 0.25,  0.25, 0.0], #(0,3)
+C = [[1.0,  1.0,  1.0,   1.0,  0.0], #(0,0)
+	 [0.0,  0.0,  2.0,   2.0,  1.0], #(0,1)
+	 [2.0,  2.0,  0.0,   0.0,  1.0], #(0,2)
+	 [1.0,  1.0,  1.0,   1.0,  2.0], #(0,3)
 	 
-	 [0.5,  0.5,  0.0,   0.0,  0.0], #(1,0)
-	 [0.0,  0.0,  0.0,   0.0,  1.0], #(1,1)
-	 [0.25, 0.25, 0.25,  0.25, 0.0], #(1,2)
-	 [0.0,  0.0,  0.5,   0.5,  0.0], #(1,3)
+	 [0.0,  0.0,  2.0,   2.0,  1.0], #(1,0)
+	 [1.0,  1.0,  1.0,   1.0,  0.0], #(1,1)
+	 [1.0,  1.0,  1.0,   1.0,  2.0], #(1,2)
+	 [2.0,  2.0,  0.0,   0.0,  1.0], #(1,3)
 
-	 [0.0,  0.0,  0.5,   0.5,  0.0], #(2,0)
-	 [0.25, 0.25, 0.25,  0.25, 0.0], #(2,1)
-	 [0.0,  0.0,  0.0,   0.0,  1.0], #(2,2)
-	 [0.5,  0.5,  0.0,   0.0,  0.0], #(2,3)
+	 [2.0,  2.0,  0.0,   0.0,  1.0], #(2,0)
+	 [1.0,  1.0,  1.0,   1.0,  2.0], #(2,1)
+	 [1.0,  1.0,  1.0,   1.0,  0.0], #(2,2)
+	 [0.0,  0.0,  2.0,   2.0,  1.0], #(2,3)
 
-	 [0.25, 0.25, 0.25,  0.25, 0.0], #(3,0)
-	 [0.0,  0.0,  0.5,   0.5,  0.0], #(3,1)
-	 [0.5,  0.5,  0.0,   0.0,  0.0], #(3,2)
-	 [0.0,  0.0,  0.0,   0.0,  1.0]] #(3,3) 
+	 [1.0,  1.0,  1.0,   1.0,  2.0], #(3,0)
+	 [2.0,  2.0,  0.0,   0.0,  1.0], #(3,1)
+	 [0.0,  0.0,  2.0,   2.0,  1.0], #(3,2)
+	 [1.0,  1.0,  1.0,   1.0,  0.0]] #(3,3)
+
+C_normalized = normalizeMatrix(C)
+
+print (C_normalized)
+print (P_normalized)
