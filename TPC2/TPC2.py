@@ -1,4 +1,5 @@
 import numpy as np
+from pandas import *
 
 def normalizeMatrix(matrix):
 	sum = 0
@@ -12,29 +13,25 @@ def normalizeMatrix(matrix):
 		sum = 0
 	return matrix
 
-def createTransitionsMatrix():
-	P = np.zeros((16,16))
+def createTransitionsMatrixes():
+	P_UD = np.zeros((16,16))
+	P_S = np.zeros((16,16))
+	P_LR = np.zeros((16,16))
 
 	for i in range(0, 16):
 		partida_lobo = X[i][0]
 		partida_coelho = X[i][1]
 		for j in range(0, 16):
-
 			destino_coelho = X[j][1]
 			destino_lobo = X[j][0]
+			# Tendo em conta apenas os movimentos Stay do Lobo
+			P_S[i][j] = P_lobo_s[partida_lobo][destino_lobo] * P_coelho[partida_coelho][destino_coelho]
+			# Tendo em conta apenas os movimentos Right e Left do Lobo
+			P_LR[i][j] = P_lobo_rl[partida_lobo][destino_lobo] * P_coelho[partida_coelho][destino_coelho]
+			# Tendo em conta apenas os movimentos Up e Down do Lobo
+			P_UD[i][j] = P_lobo_ud[partida_lobo][destino_lobo] * P_coelho[partida_coelho][destino_coelho]
 
-			if abs((destino_lobo - partida_lobo)) == 0 : #diferenca de 0 implica stay
-				P[i][j] = P_lobo_s[partida_lobo][destino_lobo] * P_coelho[partida_coelho][destino_coelho]
-
-			elif abs((destino_lobo - partida_lobo)) == 1: #diferenca de 1 implica deslocamento lateral
-				P[i][j] = P_lobo_rl[partida_lobo][destino_lobo] * P_coelho[partida_coelho][destino_coelho]
-
-			elif abs((destino_lobo - partida_lobo)) == 2: #diferenca de 2 implica deslocamento vertical
-				P[i][j] = P_lobo_ud[partida_lobo][destino_lobo] * P_coelho[partida_coelho][destino_coelho]
-
-			#print("| %d%d-%d%d: %.3f " % (partida_lobo, partida_coelho, destino_lobo, destino_coelho, P[i][j]), end='')
-		#print('')
-	return P
+	return (P_UD, P_LR, P_S)
 
 X = np.array([[0, 0], [0, 1], [0, 2], [0, 3],
     		  [1, 0], [1, 1], [1, 2], [1, 3], 
@@ -63,66 +60,44 @@ P_lobo_s = np.array([[1.0, 0.0, 0.0, 0.0],
 		    		 [0.0, 0.0, 1.0, 0.0], 
 		    	  	 [0.0, 0.0, 0.0, 1.0]])
 
-P = createTransitionsMatrix()
+P_UD, P_LR, P_S =  createTransitionsMatrixes()
+labels = ["00", "01", "02", "03", "10", "11", "12", "13", "20", "21", "22", "23", "30", "31", "32", "33"]
+print (DataFrame(P_UD, index=labels, columns=labels))
+print (DataFrame(P_LR, index=labels, columns=labels))
+print (DataFrame(P_S, index=labels, columns=labels))
 
 Policy = np.array([0.0, 0.0, 1.0, 0.0, 0.0]) #isto não é policy nenhuma...
-
-P_normalized = normalizeMatrix(P)
 
 #--------------------- possivel tabela de custos --------------------------------
 
 C = np.array([[1.0,  1.0,  1.0,   1.0,  0.0], #(0,0)
-	 [0.0,  0.0,  2.0,   2.0,  1.0], #(0,1)
-	 [2.0,  2.0,  0.0,   0.0,  1.0], #(0,2)
-	 [1.0,  1.0,  1.0,   1.0,  2.0], #(0,3)
-	 
-	 [0.0,  0.0,  2.0,   2.0,  1.0], #(1,0)
-	 [1.0,  1.0,  1.0,   1.0,  0.0], #(1,1)
-	 [1.0,  1.0,  1.0,   1.0,  2.0], #(1,2)
-	 [2.0,  2.0,  0.0,   0.0,  1.0], #(1,3)
+			  [0.0,  0.0,  2.0,   2.0,  1.0], #(0,1)
+			  [2.0,  2.0,  0.0,   0.0,  1.0], #(0,2)
+			  [1.0,  1.0,  1.0,   1.0,  2.0], #(0,3)
 
-	 [2.0,  2.0,  0.0,   0.0,  1.0], #(2,0)
-	 [1.0,  1.0,  1.0,   1.0,  2.0], #(2,1)
-	 [1.0,  1.0,  1.0,   1.0,  0.0], #(2,2)
-	 [0.0,  0.0,  2.0,   2.0,  1.0], #(2,3)
+			  [0.0,  0.0,  2.0,   2.0,  1.0], #(1,0)
+			  [1.0,  1.0,  1.0,   1.0,  0.0], #(1,1)
+			  [1.0,  1.0,  1.0,   1.0,  2.0], #(1,2)
+			  [2.0,  2.0,  0.0,   0.0,  1.0], #(1,3)
 
-	 [1.0,  1.0,  1.0,   1.0,  2.0], #(3,0)
-	 [2.0,  2.0,  0.0,   0.0,  1.0], #(3,1)
-	 [0.0,  0.0,  2.0,   2.0,  1.0], #(3,2)
-	 [1.0,  1.0,  1.0,   1.0,  0.0]]) #(3,3)
+			  [2.0,  2.0,  0.0,   0.0,  1.0], #(2,0)
+			  [1.0,  1.0,  1.0,   1.0,  2.0], #(2,1)
+			  [1.0,  1.0,  1.0,   1.0,  0.0], #(2,2)
+			  [0.0,  0.0,  2.0,   2.0,  1.0], #(2,3)
+
+			  [1.0,  1.0,  1.0,   1.0,  2.0], #(3,0)
+		 	  [2.0,  2.0,  0.0,   0.0,  1.0], #(3,1)
+			  [0.0,  0.0,  2.0,   2.0,  1.0], #(3,2)
+			  [1.0,  1.0,  1.0,   1.0,  0.0]]) #(3,3)
 
 C_normalized = normalizeMatrix(C)
-
-#print (C_normalized)
-#print (P_normalized)
-
-
-
 identityMatrix = np.identity(16)
-
 gama = 0.99
 
 cost_policy_up = C_normalized[:,2]  #(16*1)
 
-aux = np.array([[0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0],
-				[0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0],
-				[0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0],
-				[0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0],
-				[0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1],
-				[0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1],
-				[0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1],
-				[0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1],
-				[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
-				[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
-				[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
-				[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
-				[0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0],
-				[0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0],
-				[0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0],
-				[0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0]])  #not used 
-
-inverse = np.linalg.inv(identityMatrix-(gama*P_normalized)) #(16*16) - gama*(16*16) = (16*16)
-jota = np.dot(inverse,cost_policy_up)
-print (jota / jota.sum())
+inverse = np.linalg.inv(identityMatrix-(gama*P_UD)) #(16*16) - gama*(16*16) = (16*16)
+J = np.dot(inverse,cost_policy_up)
+print (J/ J.sum())
 
 
