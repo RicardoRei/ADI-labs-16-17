@@ -48,7 +48,7 @@ P_coelho = np.array([[0.6, 0.2, 0.2, 0.0],
 P_lobo_rl = np.array([[0.2, 0.8, 0.0, 0.0], 
 		     		  [0.8, 0.2, 0.0, 0.0], 
 		     		  [0.0, 0.0, 0.2, 0.8], 
-		     		  [0.0, 0.2, 0.8, 0.2]])
+		     		  [0.0, 0.0, 0.8, 0.2]])
  
 P_lobo_ud = np.array([[0.2, 0.0, 0.8, 0.0], 
 			 		  [0.0, 0.2, 0.0, 0.8], 
@@ -99,6 +99,6 @@ cost_policy_up = C[:,2]  #(16*1)
 
 inverse = np.linalg.inv(identityMatrix-(gama*P_UD)) #(16*16) - gama*(16*16) = (16*16)
 J = np.dot(inverse, cost_policy_up)
-print (J/ J.sum())
+print (J)
 
 
