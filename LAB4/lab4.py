@@ -1,3 +1,5 @@
+import warnings
+warnings.filterwarnings("ignore")
 import numpy as np
 from pandas import *
 
@@ -42,6 +44,7 @@ pomdp = {"X": X,
 
 
 
+#pergunta 2
 
 def generateRandomTrajectory(POMDP, policy, s0, steps=100):  #only 100 for debugging
     gamma = 0.9
@@ -67,6 +70,54 @@ def generateRandomTrajectory(POMDP, policy, s0, steps=100):  #only 100 for debug
     print (actions)
     print (observations)
 
+    return [states, actions, observations]
+
 initial_state = 0
 
-generateRandomTrajectory(pomdp,random_policy,initial_state)
+[states, actions, observations] = generateRandomTrajectory(pomdp,random_policy,initial_state)
+
+
+#end pergunta 2
+
+#pergunta3
+def beliefUpdate(POMDP, belief, action, observation):
+	
+	a1_hat = np.dot(belief, POMDP["Pa's"][int(action)])
+	diag = np.diagflat(POMDP["Pz's"][int(action)][:,int(observation)])
+	a1 = np.dot(a1_hat, diag)
+	norm_a1 = a1 / np.sum(a1)
+
+	return norm_a1
+
+#beliefUpdate(pomdp, np.array([0.5,0.5]), 2,0)
+
+
+def existsInList(elem, lista):
+	for i in range(0,len(lista)):	
+		dist = np.linalg.norm(lista[i]-elem)
+		if (lista[i][0] == elem[0]) and (lista[i][1] == elem[1]) or dist < 1e-5:
+			return True
+	return False
+
+
+def computeBeliefSequence(POMDP, initial_belief, actions, observations):
+
+	input_belief = initial_belief
+	beliefs = np.array([initial_belief])
+
+	for i in range(0,len(actions)):
+
+		new_belief = beliefUpdate(pomdp, input_belief, actions[i],observations[i])
+
+		if not existsInList(new_belief, beliefs):
+			beliefs = np.append(beliefs, [new_belief],axis=0)
+			
+
+		input_belief = new_belief
+		#print (input_belief)
+	print (beliefs)
+	return beliefs
+
+beliefs = computeBeliefSequence(pomdp,np.array([0.5,0.5]), actions, observations)
+
+#end3
