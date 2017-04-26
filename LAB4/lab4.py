@@ -50,7 +50,7 @@ pomdp = {"X": X,
 
 
 #pergunta 2
-def generateRandomTrajectory(POMDP, policy, s0, steps=100):  #only 100 for debugging
+def generateRandomTrajectory(POMDP, policy, s0, steps=1):  #only 100 for debugging
     gamma = 0.9
     states = np.array([s0])
 
@@ -179,9 +179,9 @@ def policyIteration(POMDP):
 time_before = time.time()
 optimal_policy, iterations = policyIteration(POMDP=pomdp)
 time_after = time.time()
-print (optimal_policy)
-print ("number of iterations required: %d" % (iterations))
-print ("computation time required: %f"% (time_after - time_before))
+#print (optimal_policy)
+#print ("number of iterations required: %d" % (iterations))
+#print ("computation time required: %f"% (time_after - time_before))
 
 
 
@@ -238,9 +238,9 @@ J_optimal, iterations = valueIteration(POMDP=pomdp, tolerance=1e-8, gamma=0.9)
 time_after = time.time()
 
 labels = ["00", "01"]
-print (DataFrame(J_optimal.T[0], index=labels, columns=["J optimal"]))
-print ("number of iterations required: %d" % (iterations))
-print ("computation time required: %f"% (time_after - time_before))
+#print (DataFrame(J_optimal.T[0], index=labels, columns=["J optimal"]))
+#print ("number of iterations required: %d" % (iterations))
+#print ("computation time required: %f"% (time_after - time_before))
 
 
 #---------------------------------------------------------------------
@@ -252,12 +252,80 @@ def mlsHeuristic(belief,policy):
 	action = np.argmax(policy[index])
 	return action
 
+def avHeuristic(belief,policy):
+    return 0
+
+def QMDPHeuristic(belief,policy):
+    gamma = 0.9
+    Cpi = calculate_Cpi(pomdp["C"],policy)
+    print("CPI")
+    print(Cpi)
+
+    Ppi = transition_Probabilities_For_Policy(pomdp, policy)
+    print("PPI")
+    print(Ppi)
+
+    Jpi = np.dot(np.linalg.inv((np.identity(2)-(gamma*Ppi))), Cpi)
+    print("JPI")
+    print(Jpi)
+
+    Qa = [None]*len(pomdp["A"])
+    for a in range(0, len(pomdp["A"])):
+            right = gamma * pomdp["Pa's"][a].dot(Jpi)
+            print ("right")
+            print (right)
+            Qa[a] = pomdp["C"][:,[a]] + right
+            print ("Qa:")
+            print (Qa[a])
+            
+
+    result = np.dot(belief,Qa)
+
+    print ("result:")
+    print (result)
+    index = np.argmin(result)
+    return index
+
 
 def useHeuristic(beliefs, heuristic, policy):
-	for belief in beliefs:
-		action = heuristic(belief,policy)
-		print (action)
+    actions = np.array([])
+    for belief in beliefs:
+        actions = np.append(actions,heuristic(belief,policy))
+    print (actions)
+		
 
-useHeuristic(beliefs,mlsHeuristic,optimal_policy)
+
+def calculate_Cpi(costs, policy):
+    cpi = np.zeros(len(policy))
+   
+    # loop over states
+    for i in range(0, len(policy)):        
+        # loop over actions to compute sum(pi(a|x) * c(a,x))
+
+        sum = 0
+        for j in range(0, len(costs[0])):
+            sum += policy[i][j]*costs[i][j]
+
+        cpi[i] = sum
+    return cpi
+
+def transition_Probabilities_For_Policy(POMDP, policy):
+    Ppi = np.zeros((len(POMDP["X"]),len(POMDP["X"]))) # creates a matrix NxN where N is the size of X
+    
+    for i in range(0, len(POMDP["X"])):
+        for j in range(0, len(POMDP["X"])):
+            
+            # for every entry we need to loop over possible actions to compute ∑ π(a|x)*P(y|x,a)
+            sum = 0
+            for k in range(0,len(POMDP["A"])):
+                sum += policy[i][k] * POMDP["Pa's"][k][i][j]
+            
+            Ppi[i][j] = sum
+    return Ppi
+
+print ("Policy:")
+print (optimal_policy)
+
+useHeuristic(beliefs,QMDPHeuristic,optimal_policy)
 
 
